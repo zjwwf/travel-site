@@ -3,14 +3,6 @@
       "github": {
          "type": "http",
          "url": "https://api.githubcopilot.com/mcp/"
-      },
-      "local": {
-         "type": "stdio",
-         "command": "node",
-         "args": ["mcp-server/server.js"],
-         "env": {
-            "MCP_SERVER_NAME": "travel-site-mcp"
-         }
       }
    }
 }
