@@ -11,7 +11,8 @@
     "test": "vitest --run",
     "typecheck": "tsc --noEmit",
     "lint": "eslint --ext .ts,.vue src",
-    "lint:fix": "eslint --ext .ts,.vue src --fix"
+    "lint:fix": "eslint --ext .ts,.vue src --fix",
+    "mcp": "node mcp-server/server.js"
   },
   "dependencies": {
     "vue": "^3.4.0",
