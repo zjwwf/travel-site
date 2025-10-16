@@ -1,14 +1,22 @@
 #!/usr/bin/env node
-import { stdin as input, stdout as output } from 'node:process';
+import { stdin as input, stdout as output, stderr as error } from 'node:process';
+import { parseRequest, routeRequest } from './protocol.js';
+import { listDestinations, searchDestinations } from './handlers.js';
 
-// Minimal MCP-like stdio echo server scaffold
-// Adjust protocol handling if integrating with actual Model Context Protocol implementation.
+// Minimal MCP-like stdio server with destination business logic
+// Supports: listDestinations, searchDestinations
 
 function log(msg) {
-  output.write(`[mcp-server] ${msg}\n`);
+  error.write(`[mcp-server] ${msg}\n`);
 }
 
 log('Starting travel-site MCP server');
+
+// Register method handlers
+const handlers = {
+  listDestinations,
+  searchDestinations
+};
 
 // Simple line buffer
 let buffer = '';
@@ -20,19 +28,28 @@ input.on('data', (chunk) => {
     for (const line of lines) {
       const trimmed = line.trim();
       if (!trimmed) continue;
-      // For demonstration, respond with a JSON envelope
-      try {
-        const parsed = JSON.parse(trimmed);
-        const response = {
-          id: parsed.id ?? null,
-          echo: parsed,
-          server: 'travel-site-mcp',
-          timestamp: new Date().toISOString()
-        };
-        output.write(JSON.stringify(response) + '\n');
-      } catch (e) {
-        output.write(JSON.stringify({ error: 'Invalid JSON', raw: trimmed }) + '\n');
+      
+      // Parse request
+      const parseResult = parseRequest(trimmed);
+      
+      if (!parseResult.valid) {
+        // Send error response for invalid request
+        output.write(JSON.stringify(parseResult.error) + '\n');
+        continue;
       }
+      
+      // Route to handler and send response
+      routeRequest(parseResult.request, handlers)
+        .then(response => {
+          output.write(JSON.stringify(response) + '\n');
+        })
+        .catch(err => {
+          log(`Unexpected error: ${err.message}`);
+          output.write(JSON.stringify({
+            id: parseResult.request.id,
+            error: { code: 'INTERNAL_ERROR', message: err.message }
+          }) + '\n');
+        });
     }
   }
 });
